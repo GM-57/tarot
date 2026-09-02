@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#111111" />
+  <title>四張塔羅牌桌</title>
+  <style>
+    :root{
+      --bg:#0f0f12;
+      --panel:#17171c;
+      --card:#202028;
+      --card2:#292934;
+      --text:#f4f4f7;
+      --muted:#a5a5b2;
+      --line:#343440;
+      --accent:#a88cff;
+      --accent-soft:#2b2443;
+      --good:#c7f0d8;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(168,140,255,.12), transparent 26rem),
+        var(--bg);
+      color:var(--text);
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;
+      min-height:100vh;
+    }
+    .wrap{
+      width:min(920px,100%);
+      margin:0 auto;
+      padding:18px 14px calc(28px + env(safe-area-inset-bottom));
+    }
+    h1{font-size:1.35rem;margin:0 0 6px}
+    .sub{margin:0;color:var(--muted);font-size:.94rem;line-height:1.55}
+    .top{
+      background:rgba(23,23,28,.92);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      backdrop-filter: blur(8px);
+    }
+    .status{
+      margin-top:14px;
+      padding:11px 12px;
+      border-radius:12px;
+      background:var(--accent-soft);
+      color:#eee9ff;
+      font-weight:650;
+      font-size:.95rem;
+    }
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:12px;
+    }
+    button{
+      border:1px solid var(--line);
+      background:var(--card);
+      color:var(--text);
+      border-radius:12px;
+      min-height:44px;
+      padding:10px 14px;
+      font:inherit;
+      cursor:pointer;
+      touch-action:manipulation;
+    }
+    button.primary{
+      background:var(--accent);
+      color:#111;
+      border-color:transparent;
+      font-weight:750;
+    }
+    button:disabled{opacity:.45;cursor:default}
+    button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+    .section-title{
+      margin:18px 2px 8px;
+      color:var(--muted);
+      font-size:.88rem;
+      letter-spacing:.02em;
+    }
+    .picked{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:8px;
+    }
+    .slot{
+      min-height:104px;
+      border:1px solid var(--line);
+      background:var(--panel);
+      border-radius:14px;
+      padding:10px 8px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+    }
+    .slot .n{font-size:.74rem;color:var(--muted);margin-bottom:7px}
+    .slot .name{font-size:.94rem;font-weight:750;line-height:1.28}
+    .slot .ori{font-size:.84rem;color:var(--good);margin-top:5px}
+    .slot.hidden .name{color:var(--muted);font-weight:600}
+    .deck-panel{
+      border:1px solid var(--line);
+      background:rgba(23,23,28,.72);
+      border-radius:18px;
+      padding:12px;
+    }
+    .deck{
+      display:grid;
+      grid-template-columns:repeat(9,minmax(0,1fr));
+      gap:7px;
+    }
+    .back{
+      aspect-ratio:.68;
+      min-height:52px;
+      padding:0;
+      border-radius:9px;
+      position:relative;
+      overflow:hidden;
+      background:
+        linear-gradient(145deg, transparent 38%, rgba(255,255,255,.07) 39% 41%, transparent 42%),
+        linear-gradient(35deg, transparent 38%, rgba(255,255,255,.05) 39% 41%, transparent 42%),
+        var(--card2);
+    }
+    .back::after{
+      content:"✦";
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      color:#d9d0ff;
+      font-size:1.05rem;
+    }
+    .back.selected{
+      border-color:var(--accent);
+      background:var(--accent-soft);
+      transform:translateY(-2px);
+    }
+    .back.selected::after{content:"✓";font-weight:800;color:#fff}
+    .resultbox{
+      margin-top:12px;
+      border:1px solid var(--line);
+      background:var(--panel);
+      border-radius:14px;
+      padding:12px;
+      display:none;
+    }
+    .resultbox.show{display:block}
+    .resultline{
+      margin:0;
+      line-height:1.65;
+      font-weight:650;
+      word-break:break-word;
+    }
+    .tiny{font-size:.78rem;color:var(--muted);margin-top:8px;line-height:1.5}
+    .toast{
+      min-height:1.2em;
+      color:var(--good);
+      font-size:.82rem;
+      margin-top:7px;
+    }
+    @media(max-width:560px){
+      .deck{grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+      .picked{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .slot{min-height:88px}
+    }
+    @media(max-width:350px){
+      .deck{grid-template-columns:repeat(5,minmax(0,1fr))}
+    }
+    @media(prefers-reduced-motion:reduce){
+      *{scroll-behavior:auto!important;transition:none!important}
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="top">
+      <h1>🔮 四張塔羅牌桌</h1>
+      <p class="sub">完整 78 張。洗牌時就先決定每張牌的位置與正逆位；你只看到牌背，親自選四張，第四張選完才一起翻開。</p>
+      <div id="status" class="status" aria-live="polite">牌已洗好。憑感覺選第一張。</div>
+      <div class="actions">
+        <button id="reshuffle" class="primary" type="button">重新洗牌</button>
+        <button id="copy" type="button" disabled>複製四張結果</button>
+      </div>
+      <div id="toast" class="toast" aria-live="polite"></div>
+    </section>
+
+    <div class="section-title">你選的四張</div>
+    <section id="picked" class="picked" aria-live="polite"></section>
+
+    <div class="section-title">牌背區 · 已選 <span id="count">0</span>/4</div>
+    <section class="deck-panel">
+      <div id="deck" class="deck"></div>
+      <div id="resultbox" class="resultbox">
+        <p id="resultline" class="resultline"></p>
+        <div class="tiny">可直接把這行貼回 ChatGPT 解牌。</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const majors = [
+        "愚者","魔術師","女祭司","皇后","皇帝","教皇","戀人","戰車","力量","隱者",
+        "命運之輪","正義","倒吊人","死神","節制","惡魔","高塔","星星","月亮","太陽","審判","世界"
+      ];
+      const suits = ["權杖","聖杯","寶劍","錢幣"];
+      const ranks = ["一","二","三","四","五","六","七","八","九","十","侍者","騎士","皇后","國王"];
+      const names = [...majors, ...suits.flatMap(s => ranks.map(r => s + r))];
+
+      const deckEl = document.getElementById("deck");
+      const pickedEl = document.getElementById("picked");
+      const countEl = document.getElementById("count");
+      const statusEl = document.getElementById("status");
+      const resultBox = document.getElementById("resultbox");
+      const resultLine = document.getElementById("resultline");
+      const copyBtn = document.getElementById("copy");
+      const reshuffleBtn = document.getElementById("reshuffle");
+      const toastEl = document.getElementById("toast");
+
+      let deck = [];
+      let chosen = [];
+
+      function randomInt(max) {
+        if (max <= 0) return 0;
+        if (window.crypto && crypto.getRandomValues) {
+          const buf = new Uint32Array(1);
+          const range = 0x100000000;
+          const limit = Math.floor(range / max) * max;
+          do { crypto.getRandomValues(buf); } while (buf[0] >= limit);
+          return buf[0] % max;
+        }
+        return Math.floor(Math.random() * max);
+      }
+
+      function shuffleDeck() {
+        deck = names.map(name => ({
+          name,
+          orientation: randomInt(2) === 0 ? "正位" : "逆位"
+        }));
+
+        for (let i = deck.length - 1; i > 0; i--) {
+          const j = randomInt(i + 1);
+          [deck[i], deck[j]] = [deck[j], deck[i]];
+        }
+
+        chosen = [];
+        toastEl.textContent = "";
+        render();
+      }
+
+      function renderPicked() {
+        pickedEl.innerHTML = "";
+        for (let i = 0; i < 4; i++) {
+          const slot = document.createElement("div");
+          slot.className = "slot" + (chosen.length < 4 ? " hidden" : "");
+          const n = document.createElement("div");
+          n.className = "n";
+          n.textContent = `第 ${i + 1} 張`;
+          const name = document.createElement("div");
+          name.className = "name";
+          const ori = document.createElement("div");
+          ori.className = "ori";
+
+          if (chosen[i] === undefined) {
+            name.textContent = "尚未選擇";
+            ori.textContent = "";
+          } else if (chosen.length < 4) {
+            name.textContent = "已選";
+            ori.textContent = "尚未翻牌";
+          } else {
+            const card = deck[chosen[i]];
+            name.textContent = card.name;
+            ori.textContent = card.orientation;
+          }
+
+          slot.append(n, name, ori);
+          pickedEl.appendChild(slot);
+        }
+      }
+
+      function renderDeck() {
+        deckEl.innerHTML = "";
+        deck.forEach((card, index) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "back" + (chosen.includes(index) ? " selected" : "");
+          b.setAttribute("aria-label", `牌背 ${index + 1}${chosen.includes(index) ? "，已選" : ""}`);
+          b.disabled = chosen.length >= 4 || chosen.includes(index);
+          b.addEventListener("click", () => pickCard(index));
+          deckEl.appendChild(b);
+        });
+      }
+
+      function render() {
+        countEl.textContent = chosen.length;
+        renderPicked();
+        renderDeck();
+
+        if (chosen.length === 0) {
+          statusEl.textContent = "牌已洗好。憑感覺選第一張。";
+          resultBox.classList.remove("show");
+          copyBtn.disabled = true;
+        } else if (chosen.length < 4) {
+          statusEl.textContent = `已選 ${chosen.length} 張，再選 ${4 - chosen.length} 張。`;
+          resultBox.classList.remove("show");
+          copyBtn.disabled = true;
+        } else {
+          statusEl.textContent = "四張都選好了，現在翻牌。";
+          const text = chosen
+            .map(i => `${deck[i].name}${deck[i].orientation === "正位" ? "正" : "逆"}`)
+            .join("｜");
+          resultLine.textContent = text;
+          resultBox.classList.add("show");
+          copyBtn.disabled = false;
+        }
+      }
+
+      function pickCard(index) {
+        if (chosen.length >= 4 || chosen.includes(index)) return;
+        chosen.push(index);
+        render();
+        if (chosen.length === 4) {
+          pickedEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }
+
+      async function copyResult() {
+        if (chosen.length !== 4) return;
+        const text = resultLine.textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+          toastEl.textContent = "已複製，可以直接貼回 ChatGPT。";
+        } catch {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "absolute";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand("copy");
+            toastEl.textContent = "已複製，可以直接貼回 ChatGPT。";
+          } catch {
+            toastEl.textContent = "瀏覽器未允許自動複製，請長按上方結果文字複製。";
+          }
+          ta.remove();
+        }
+      }
+
+      reshuffleBtn.addEventListener("click", shuffleDeck);
+      copyBtn.addEventListener("click", copyResult);
+      shuffleDeck();
+    })();
+  </script>
+</body>
+</html>
